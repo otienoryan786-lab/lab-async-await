@@ -39,16 +39,40 @@ global.Node = dom.window.Node;
 global.Text = dom.window.Text;
 global.XMLHttpRequest = dom.window.XMLHttpRequest;
 
+function waitForElement(selector, timeout = 4500) {
+  const existingElement = document.querySelector(selector);
+  if (existingElement) return Promise.resolve(existingElement);
+
+  return new Promise((resolve, reject) => {
+    const observer = new window.MutationObserver(() => {
+      const element = document.querySelector(selector);
+      if (element) {
+        observer.disconnect();
+        clearTimeout(timeoutId);
+        resolve(element);
+      }
+    });
+
+    const timeoutId = setTimeout(() => {
+      observer.disconnect();
+      reject(new Error(`Timed out waiting for ${selector}`));
+    }, timeout);
+
+    observer.observe(document.body, { childList: true, subtree: true });
+  });
+}
+
 // Sample test suite for JavaScript event handling
 describe('Asynchronous Fetching ', () => {
   it('should fetch to external api and add information to page', async() => {
-    await new Promise(resolve => setTimeout(resolve, 200)); 
+    await waitForElement('#post-list li');
     let postDisplay = document.querySelector("#post-list")
     expect(postDisplay.innerHTML).to.include('sunt aut')
     
   })
   it('should create an h1 and p element to add', async() => {
-    await new Promise(resolve => setTimeout(resolve, 200)); 
+    await waitForElement('h1');
+    await waitForElement('p');
     let h1 = document.querySelector("h1")
     let p = document.querySelector("p")
     expect(h1.textContent).to.include("sunt aut facere repellat")
